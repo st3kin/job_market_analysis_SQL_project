@@ -1,0 +1,30 @@
+--CTE for country average
+WITH avg_by_country AS (
+    SELECT
+        job_country,
+        AVG(salary_year_avg) AS avg_salary
+    FROM job_postings_fact
+    GROUP BY job_country
+)
+
+--Main query
+
+SELECT
+    j.job_id,
+    j.job_title,
+    c.name AS company_name,
+    j.salary_year_avg AS salary_rate,
+    CASE 
+        WHEN j.salary_year_avg > abc.avg_salary THEN 'Above Average'
+        WHEN j.salary_year_avg < abc.avg_salary THEN 'Below Average'
+    END AS salary_category,
+    EXTRACT (MONTH FROM j.job_posted_date) AS month
+FROM job_postings_fact AS j
+LEFT JOIN company_dim AS c
+    ON j.company_id = c.company_id
+LEFT JOIN avg_by_country AS abc
+    ON j.job_country = abc.job_country
+WHERE j.salary_year_avg IS NOT NULL
+    AND j.job_title LIKE '%Data Analyst%'
+    AND j.job_country = 'Turkey'
+ORDER BY month DESC;

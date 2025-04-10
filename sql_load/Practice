@@ -1,0 +1,42 @@
+-- CTE for the number of unique skills required 
+
+WITH skill_count AS (
+    SELECT 
+        c.company_id,
+        COUNT(DISTINCT s.skill_id) AS unique_skills
+    FROM 
+        company_dim AS c
+    LEFT JOIN job_postings_fact AS j
+        ON c.company_id = j.company_id
+    LEFT JOIN skills_job_dim AS s
+        ON j.job_id = s.job_id
+    GROUP BY c.company_id
+),
+
+-- CTE for highest average salary offered
+
+max_salary AS (
+    SELECT
+        j.company_id,
+        MAX(j.salary_year_avg) AS highest_avg_salary
+    FROM 
+        job_postings_fact AS j
+    WHERE j.job_id IN (
+        SELECT 
+            job_id
+        FROM 
+            skills_job_dim)
+    GROUP BY j.company_id
+)
+
+SELECT
+    c.name,
+    skill_count.unique_skills AS unique_skills,
+    max_salary.highest_avg_salary
+FROM
+    company_dim AS c
+LEFT JOIN skill_count
+    ON c.company_id = skill_count.company_id
+LEFT JOIN max_salary
+    ON c.company_id = max_salary.company_id
+ORDER BY unique_skills DESC;
